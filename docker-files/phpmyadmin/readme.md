@@ -1,2 +1,0 @@
-# un container de phpmyadmin
-
