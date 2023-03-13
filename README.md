@@ -5,8 +5,6 @@
 
 2.  **django:**
 
-3.  **docker-file:**
-
 4.  **node:**
 
 5.  **python_playground:**
