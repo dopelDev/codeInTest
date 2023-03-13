@@ -20,7 +20,6 @@ class Settings:
 
 def get_engine(user, passwd, host, port, db_name):
     uri_base = f'postgresql://{user}:{passwd}@{host}:{port}/{db_name}'
-    # uri_base = f'postgresql://nraxnmwjkbqkbz:e886c75c3afd1a6de316d39ccc0d7c7460773b8659a4b26e640773343d3a2127@ec2-54-161-255-125.compute-1.amazonaws.com:5432/d91nrpfrbi3mtn'
     if not database_exists(uri_base):
         create_database(uri_base)
     engine = create_engine(uri_base, echo=True)
