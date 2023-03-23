@@ -17,6 +17,7 @@ in the remote machine .config directory if not equal copy the remote file to the
 straight copy this file to the local machine.
 """
 
+import os
 import sys
 import filecmp
 import requests
@@ -27,9 +28,22 @@ class ConfigChecker:
         self.logger = self.log()
         pass
     
-    # log instance
+    # get the environment parameters
+    def get_environment_settings(self):
+        self.working_directory = os.getcwd()
+
+    # logger instance
     def log(self) -> log.Logger:
+        file_handler = log.FileHandler(self.working_directory + "/" + __name__ + ".log",
+                mode="+w")
         logger = log.getLogger(__name__)
+        logger.setLevel(level = log.INFO)
+        formatter = log.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+        stream_handler = log.StreamHandler()
+        stream_handler.setFormatter(formatter)
+        logger.addHandler(file_handler)
+        logger.addHandler(stream_handler)
+        logger.info("Logger initialized")
         
         return logger
         
