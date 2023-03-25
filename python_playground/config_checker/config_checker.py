@@ -95,7 +95,13 @@ class ConfigChecker:
             self.logger.error("Response not dumped")
             sys.exit(1)
 
-    # more stuff to come
+    def extract_tar(self) -> None:
+        if self.response_status_sucess:
+            os.system("tar -xzf {} -C {}".format(self.temporary_dir + "/config.tar.gz", self.temporary_dir))
+            self.logger.info("Tar extracted successfully")
+        else:
+            self.logger.error("Tar not extracted")
+            sys.exit(1)
     
     # compare the files from the local machine and the remote machine
 
