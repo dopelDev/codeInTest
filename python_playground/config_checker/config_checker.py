@@ -26,33 +26,21 @@ import logging as log
 class ConfigChecker:
     def __init__(self):
         self.logger = self.log()
-        self.local_config_dir =  self.get_local_parameters()
+        self.local_config_dir = os.environ["HOME"] + "/.config"
         self.remote_config_dir = self.get_remote_parameters()
-        self.temporary_dir = self.get_temporary_dir()
         self.response_status_sucess =  self.status_code(self.handle_request(self.remote_config_dir))
-
+    
     # get the environment parameters
-    def get_local_parameters(self) -> str:
-        self.logger.info("Local parameters initialized successfully")
-        return os.environ["HOME"] + "/.config"
-
-    def get_temporary_dir(self) -> str:
-        self.logger.info("Temporary directory initialized successfully")
-        return os.environ["HOME"] + "/.config/temp"
+    def get_environment_settings(self):
+        self.working_directory = os.getcwd()
 
     def get_remote_parameters(self) -> str:
-        if len(sys.argv) <= 1:
-            msg_error = "No URL provided"
-            self.logger.error(msg_error)
-            raise TypeError(msg_error)
-        else:
-            self.logger.info("Remote parameters initialized successfully")
-            url = sys.argv[1]
-            return url
+        url = sys.argv[1]
+        return url
 
     # logger instance
     def log(self) -> log.Logger:
-        file_handler = log.FileHandler(os.getcwd()+ "/" + sys.argv[0]+ ".log",
+        file_handler = log.FileHandler(self.working_directory + "/" + __name__ + ".log",
                 mode="+w")
         logger = log.getLogger(__name__)
         logger.setLevel(level = log.INFO)
@@ -66,7 +54,7 @@ class ConfigChecker:
         return logger
         
     # handling the request
-    def handle_request(self, url : str) -> requests.models.Response:
+    def handle_request(self, url) -> requests.models.Response:
         try:
             response = requests.get(url)
             self.logger.info("Request Success: {}".format(response.status_code))
@@ -76,43 +64,15 @@ class ConfigChecker:
             self.logger.error("Request Error: {}".format(e))
             sys.exit(1)
     
-    def status_code(self, response : requests.models.Response) -> bool:
+    def status_code(self, response) -> bool:
         if response.status_code != 200:
-            self.logger.error("Error: {}".format(response.status_code))
             print("Error: {}".format(response.status_code))
             sys.exit(1)
         else:
-            self.logger.info("Success: {}".format(response.status_code))
             print("Success: {}".format(response.status_code))
             return True
-    
-    def dump_response(self, response : requests.models.Response) -> None:
-        if self.response_status_sucess:
-            with open(self.temporary_dir + "/config.tar.gz", "wb") as f:
-                f.write(response.content)
-                self.logger.info("Response dumped successfully")
-        else:
-            self.logger.error("Response not dumped")
-            sys.exit(1)
 
-    def extract_tar(self) -> None:
-        if self.response_status_sucess:
-            os.system("tar -xzf {} -C {}".format(self.temporary_dir + "/config.tar.gz", self.temporary_dir))
-            self.logger.info("Tar extracted successfully")
-        else:
-            self.logger.error("Tar not extracted")
-            sys.exit(1)
-    
-    # compare the files from the local machine and the remote machine
-
-    # check and clean up
-
-    def remove_temporary_dir(self) -> None:
-        if os.path.exists(self.temporary_dir):
-            os.rmdir(self.temporary_dir)
-            self.logger.info("Temporary directory removed")
-        else:
-            self.logger.info("Temporary directory does not exist")
+    # more stuff to come
 
 if __name__ == "__main__":
     pass
