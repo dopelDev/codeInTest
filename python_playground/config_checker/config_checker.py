@@ -19,7 +19,7 @@ straight copy this file to the local machine.
 
 import os
 import sys
-import filecmp
+import dirsync
 import requests
 import logging as log
 
@@ -129,20 +129,13 @@ class ConfigChecker:
             sys.exit(1)
 
     def check_local_config_files_exists(self) -> bool:
-        # code here
+        if not os.path.exists(self.local_config_dir_path):
+            self.logger.info("Local config directory does not exist")
+            return False
         return True
     
     def get_list_config_files(self) -> list:
-        # code here
-        return []
-
-    def compare_files(self, local_file : str, remote_file : str) -> bool:
-        # code here
-        return True
-
-    def update_config_files(self, local_file : str, remote_file : str) -> None:
-        # code here
-        pass
+        return os.listdir(self.local_config_dir_path)
 
     def get_remote_list_config_files(self):
         if not os.path.exists(self.temporary_dir_path):
@@ -152,7 +145,19 @@ class ConfigChecker:
             self.logger.info("Temporary directory exists")
             return os.listdir(self.temporary_dir_path)
 
+    def compare_files(self, local_file_list : list, remote_file_list : list) -> bool:
+        # code here
+        return True
+
+    def update_config_files(self, local_file_list : list, remote_file_list : list) -> None:
+
+        # code here
+        pass
+
     # check and clean up
+    def sumary_check(self) -> None:
+        file_object = open(self.local_config_dir_path + "/sync_sumary.txt", "w")
+        pass 
 
     def remove_temporary_dir(self) -> None:
         if os.path.exists(self.temporary_dir_path):
