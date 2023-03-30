@@ -28,7 +28,7 @@ class ConfigChecker:
         self.logger = self.log()
         self.local_config_dir_path =  self.get_local_parameters()
         self.remote_url_depository = self.get_url_depository()
-        self.temporary_dir_path = self.get_temporary_dir()
+        self.temporary_dir_path = self.set_temporary_path()
         self.response_status_sucess =  self.status_code(self.handle_request(self.remote_url_depository))
         self.temporary_dir_exists = self.create_temporary_dir()
 
@@ -37,8 +37,8 @@ class ConfigChecker:
         self.logger.info("Local parameters initialized successfully")
         return os.environ["HOME"] + "/.config"
 
-    def get_temporary_dir(self) -> str:
-        self.logger.info("Temporary directory initialized successfully")
+    def set_temporary_path(self) -> str:
+        self.logger.info("Temporary directory was set successfully")
         return os.environ["HOME"] + "/.config/temp"
 
     def get_url_depository(self) -> str:
@@ -98,9 +98,9 @@ class ConfigChecker:
             self.logger.error("Response not dumped")
             sys.exit(1)
 
-    def extract_tar(self) -> None:
+    def extract_from_tar(self) -> None:
         if self.response_status_sucess and self.temporary_dir_exists:
-            os.system("tar -xzf {} -C {}".format(self.temporary_dir_path + "/config.tar.gz", self.temporary_dir_path))
+            os.system("tar -xzf {} -C {}".format(self.temporary_dir_path + "/config.tar.gz", self.temporary_dir_path + "/config"))
             self.logger.info("Tar extracted successfully")
         else:
             self.logger.error("Tar not extracted")
@@ -120,14 +120,6 @@ class ConfigChecker:
             self.logger.info("Temporary directory already exists")
         return True
 
-    def descopress_tar(self) -> None:
-        if self.temporary_dir_exists:
-            os.system("tar -xzf {} -C {}".format(self.temporary_dir_path + "/config.tar.gz", self.temporary_dir_path))
-            self.logger.info("Tar extracted successfully")
-        else:
-            self.logger.error("Tar not extracted")
-            sys.exit(1)
-
     def check_local_config_files_exists(self) -> bool:
         if not os.path.exists(self.local_config_dir_path):
             self.logger.info("Local config directory does not exist")
@@ -135,7 +127,12 @@ class ConfigChecker:
         return True
     
     def get_list_config_files(self) -> list:
-        return os.listdir(self.local_config_dir_path)
+        if not os.path.exists(self.local_config_dir_path):
+            self.logger.error("Local config directory does not exist")
+            raise FileNotFoundError("Local config directory does not exist")
+        else:
+            self.logger.info("Local config directory exists")
+            return os.listdir(self.local_config_dir_path)
 
     def get_remote_list_config_files(self):
         if not os.path.exists(self.temporary_dir_path):
@@ -146,18 +143,23 @@ class ConfigChecker:
             return os.listdir(self.temporary_dir_path)
 
     def compare_files(self, local_file_list : list, remote_file_list : list) -> bool:
-        # code here
+        try:
+            dirsync.sync(sourcedir=self.temporary_dir_path, targetdir=self.local_config_dir_path, action='--sync')
+        except PermissionError as e:
+            self.logger.error("Permission denied: {}".format(e))
+            sys.exit(1)
         return True
 
-    def update_config_files(self, local_file_list : list, remote_file_list : list) -> None:
-
-        # code here
-        pass
-
     # check and clean up
-    def sumary_check(self) -> None:
-        file_object = open(self.local_config_dir_path + "/sync_sumary.txt", "w")
-        pass 
+    def sumary_check(self, crete_file = bool) -> None:
+        msg = dirsync.sync(self.temporary_dir_path, self.local_config_dir_path,
+                action='--diff') 
+        if crete_file:
+            with open(self.local_config_dir_path + "/sync_sumary.txt", mode="w") as sumary_file:
+                sumary_file.writelines(msg)
+        else:
+            self.logger.info(msg)
+            print(msg)
 
     def remove_temporary_dir(self) -> None:
         if os.path.exists(self.temporary_dir_path):
