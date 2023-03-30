@@ -120,6 +120,14 @@ class ConfigChecker:
             self.logger.info("Temporary directory already exists")
         return True
 
+    def descopress_tar(self) -> None:
+        if self.temporary_dir_exists:
+            os.system("tar -xzf {} -C {}".format(self.temporary_dir_path + "/config.tar.gz", self.temporary_dir_path))
+            self.logger.info("Tar extracted successfully")
+        else:
+            self.logger.error("Tar not extracted")
+            sys.exit(1)
+
     def check_local_config_files_exists(self) -> bool:
         # code here
         return True
