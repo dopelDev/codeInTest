@@ -126,21 +126,13 @@ class ConfigChecker:
             return False
         return True
     
-    def get_list_config_files(self) -> list:
-        if not os.path.exists(self.local_config_dir_path):
-            self.logger.error("Local config directory does not exist")
-            raise FileNotFoundError("Local config directory does not exist")
-        else:
-            self.logger.info("Local config directory exists")
-            return os.listdir(self.local_config_dir_path)
-
-    def get_remote_list_config_files(self):
+    def set_remote_directory(self) -> bool:
         if not os.path.exists(self.temporary_dir_path):
             self.logger.error("Temporary directory does not exist")
             raise FileNotFoundError("Temporary directory does not exist")
         else:
             self.logger.info("Temporary directory exists")
-            return os.listdir(self.temporary_dir_path)
+            return True
 
     def compare_files(self, local_file_list : list, remote_file_list : list) -> bool:
         try:
