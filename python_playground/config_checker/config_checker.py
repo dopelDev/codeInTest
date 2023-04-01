@@ -73,18 +73,15 @@ class ConfigChecker:
             self.logger.info("Request Success: {}".format(response.status_code))
             return response
         except Exception as e:
-            print(e)
             self.logger.error("Request Error: {}".format(e))
             sys.exit(1)
     
     def status_code(self, response : requests.models.Response) -> bool:
         if response.status_code != 200:
             self.logger.error("Error: {}".format(response.status_code))
-            print("Error: {}".format(response.status_code))
             sys.exit(1)
         else:
             self.logger.info("Success: {}".format(response.status_code))
-            print("Success: {}".format(response.status_code))
             return True
 
     # functions tools for function run
@@ -134,24 +131,25 @@ class ConfigChecker:
             self.logger.info("Temporary directory exists")
             return True
 
-    def compare_files(self, local_file_list : list, remote_file_list : list) -> bool:
+    def compare_files(self) -> bool:
         try:
-            dirsync.sync(sourcedir=self.temporary_dir_path, targetdir=self.local_config_dir_path, action='--sync')
+            dirsync.sync(sourcedir=self.temporary_dir_path, targetdir=self.local_config_dir_path,
+                    action='sync')
         except PermissionError as e:
             self.logger.error("Permission denied: {}".format(e))
             sys.exit(1)
         return True
 
     # check and clean up
-    def sumary_check(self, crete_file = bool) -> None:
+    def sumary_check(self, action) -> None:
         msg = dirsync.sync(self.temporary_dir_path, self.local_config_dir_path,
-                action='--diff') 
-        if crete_file:
+                action='diff') 
+        if action == 'save':
             with open(self.local_config_dir_path + "/sync_sumary.txt", mode="w") as sumary_file:
                 sumary_file.writelines(msg)
-        else:
+        elif action == None:
             self.logger.info(msg)
-            print(msg)
+            print(msg) # this line has been remove in the future for GUI integration
 
     def remove_temporary_dir(self) -> None:
         if os.path.exists(self.temporary_dir_path):
@@ -163,7 +161,20 @@ class ConfigChecker:
     # run function
     # this function will be called others functions after the initialization
     def run(self) -> None:
-        pass
+        if sys.argv[2] == "check":
+            self.dump_response(self.handle_request(self.remote_url_depository))
+            self.extract_from_tar()
+            self.set_remote_directory()
+            self.sumary_check(action='save')
+            self.remove_temporary_dir()
+        elif sys.argv[2] == "sync":
+            self.dump_response(self.handle_request(self.remote_url_depository))
+            self.extract_from_tar()
+            self.set_remote_directory()
+            self.compare_files()
+            self.remove_temporary_dir()
 
 if __name__ == "__main__":
-    pass
+   checker = ConfigChecker()
+   checker.run()
+
