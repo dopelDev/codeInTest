@@ -1,3 +1,5 @@
 # Compare config files
 
-## rebuild get_local_paraments. Allow manual local path
+## KISS
+
+#### keep it simple stupid
