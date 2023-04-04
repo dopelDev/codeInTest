@@ -1,0 +1,1 @@
+2023-04-04 02:42:10,331 - logger - INFO - Initalized ConfigSync with source: https://github.com/dopelDev/dotFiles/tree/master/config and destination: /home/dopel/.config and temporary path: /tmp/config_sync
