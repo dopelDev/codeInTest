@@ -1,1 +1,4 @@
-2023-04-04 02:42:10,331 - logger - INFO - Initalized ConfigSync with source: https://github.com/dopelDev/dotFiles/tree/master/config and destination: /home/dopel/.config and temporary path: /tmp/config_sync
+2023-04-04 13:55:29,606 - logger - INFO - Initalized ConfigSync with source_url: https://github.com/dopelDedfghdfghdfghdfghdfghdfghdfh and destination: /home/dopel/.config and action: summary
+2023-04-04 13:55:29,606 - logger - WARNING - Make call to https://github.com/dopelDedfghdfghdfghdfghdfghdfghdfh to download config files to /tmp/config_sync
+2023-04-04 13:55:30,117 - logger - ERROR - Failed to download config files from https://github.com/dopelDedfghdfghdfghdfghdfghdfghdfh to /tmp/config_sync
+2023-04-04 13:55:30,117 - logger - ERROR - Status code: 404
