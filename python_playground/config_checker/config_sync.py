@@ -31,9 +31,17 @@ class ConfigSync(object):
             self.summary()
 
     def download(self):
+        # i'll use github api to download the config files
+        # i need a recusive call to get all the files in the directory at repo
+        # https://api.github.com/repos/username/repo/contents/path/to/file
         try:
-            self.logger.warning(f"Make call to {self.source_url} to download config files to {self.temp_path}")
+            self.logger.info(f"Make call to {self.source_url} to download config files to {self.temp_path}")
             os.makedirs(self.temp_path, exist_ok=True)
+        except OSError as e:
+            self.logger.error(f"Error: {self.temp_path} : {e.strerror}")
+            sys.exit(1)
+
+        try:
             response = requests.get(self.source_url, stream=True)
         except requests.HTTPError as e:
             self.logger.error(f"HTTP error: {e}")
@@ -54,7 +62,11 @@ class ConfigSync(object):
 
     def compare(self):
         self.logger.debug(f"Comparing config files in {self.temp_path} with {self.destination}")
-        report = filecmp.dircmp(self.temp_path, self.destination)
+        try:
+            report = filecmp.dircmp(self.temp_path, self.destination)
+        except OSError as e:
+            self.logger.error(f"Error: {self.temp_path} : {e.strerror}")
+            sys.exit(1)
         self.logger.info(f"Report: {json.dumps(report.__dict__)}")
 
     def copy(self):
@@ -63,17 +75,23 @@ class ConfigSync(object):
 
     def cleanup(self):
         self.logger.debug(f"Cleaning up temporary files in {self.temp_path}")
-        shutil.rmtree(self.temp_path)
+        try:
+            shutil.rmtree(self.temp_path)
+        except OSError as e:
+            self.logger.error(f"Error: {self.temp_path} : {e.strerror}")
 
     def sync(self):
+        self.logger.debug("Syncing config files")
         self.download()
         self.compare()
         self.copy()
+        self.cleanup()
 
     def summary(self):
         self.logger.debug("Generating summary")
         self.download()
-
+        self.compare()
+        self.cleanup()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Sync config files from remote source_url to local files.')
