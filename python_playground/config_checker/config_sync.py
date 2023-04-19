@@ -7,6 +7,7 @@ This script is used to sync the config files from the remote source_url at githu
 import argparse
 import os
 import sys
+from typing import Dict
 import requests
 import filecmp
 import json
@@ -19,7 +20,7 @@ class ConfigSync(object):
         self.source_url = source_url
         self.destination = destination
         self.destination_path = os.path.dirname(destination)
-        self.temp_path = '/tmp/config_sync' 
+        self.temp_path = 'home/dopel/tmp/config_sync' 
         self.logger.info(f"Initalized ConfigSync with source_url: {self.source_url} and destination: {self.destination} and action: {action}")
 
     def action(self, action):
@@ -31,34 +32,53 @@ class ConfigSync(object):
             self.summary()
 
     def download(self):
-        # i'll use github api to download the config files
-        # i need a recusive call to get all the files in the directory at repo
-        # https://api.github.com/repos/username/repo/contents/path/to/file
+        # download the files from the source_url to the temp_path
+        # get a json object from the source_url and iterate through the list
+        # if the type is dir, recursively call the download function
+        # if the type is file, call the download_file function
+        self.logger.debug(f"Downloading config files from {self.source_url} to {self.temp_path}")
+        self.recursive_download(self.source_url)
+    
+    # worker function to download the file
+    def download_file(self, url, path) -> None:
+        self.logger.debug(f"Downloading file from {url} to {path}")
+        response = None
         try:
-            self.logger.info(f"Make call to {self.source_url} to download config files to {self.temp_path}")
-            os.makedirs(self.temp_path, exist_ok=True)
-        except OSError as e:
-            self.logger.error(f"Error: {self.temp_path} : {e.strerror}")
+            response = requests.get(url)
+        except requests.exceptions.RequestException as e:    
+            self.logger.error(f"Error: {e}")
             sys.exit(1)
-
-        try:
-            response = requests.get(self.source_url, stream=True)
-        except requests.HTTPError as e:
-            self.logger.error(f"HTTP error: {e}")
-            sys.exit(1)
-
         if response.status_code == 200:
-            self.logger.warning(f"Downloaded config files from {self.source_url} to {self.temp_path}")
-            contents = json.loads(response.text)
-            for content in contents:
-                self.logger.warning(f"Downloading {content['name']} from {content['download_url']}")
-                file_response = requests.get(content['download_url'], stream=True)
-                with open(os.path.join(self.temp_path + content['name']), "wb") as f:
-                    f.write(file_response.content)
+            with open(f"{self.temp_path}/{path}", 'wb') as f:
+                f.write(response.content)
+    
+    def create_dir(self, path) -> None:
+        # create the directory if it does not exist at the temp_path
+        self.logger.debug(f"Creating directory {path}")
+        if not os.path.exists(f"{self.temp_path}/{path}"):
+            os.makedirs(f"{self.temp_path}/{path}")
+            self.logger.debug(f"Directory {path} created successfully")
         else:
-            self.logger.error(f"Failed to download config files from {self.source_url} to {self.temp_path}")
-            self.logger.error(f"Status code: {response.status_code}")
+            self.logger.debug(f"Directory {path} already exists")
+    
+    def recursive_download(self, url):
+        try:
+            response = requests.get(url)
+        except requests.exceptions.RequestException as e:
+            self.logger.error(f"Error: {e}")
             sys.exit(1)
+        if response.status_code == 200:
+            response_json : Dict = json.loads(response.text)
+        else:
+            self.logger.error(f"Error: {response.status_code}")
+            sys.exit(1)
+        if isinstance(response_json, list):
+            for item in response_json:
+                if item.get('type') == 'dir':
+                    self.recursive_download(item.get('html_url'))
+                    self.create_dir(item.get('path'))
+                elif item.get('type') == 'file':
+                    self.download_file(item.get('download_url'), item.get('path'))
 
     def compare(self):
         self.logger.debug(f"Comparing config files in {self.temp_path} with {self.destination}")
@@ -80,6 +100,8 @@ class ConfigSync(object):
         except OSError as e:
             self.logger.error(f"Error: {self.temp_path} : {e.strerror}")
 
+    # Action functions
+
     def sync(self):
         self.logger.debug("Syncing config files")
         self.download()
@@ -92,8 +114,8 @@ class ConfigSync(object):
         self.download()
         self.compare()
         self.cleanup()
-
-if __name__ == "__main__":
+    
+def main():
     parser = argparse.ArgumentParser(description='Sync config files from remote source_url to local files.')
     parser.add_argument('--source_url', help='Source directory', required=True)
     parser.add_argument('--destination', help='Destination directory', required=True)
@@ -102,3 +124,5 @@ if __name__ == "__main__":
 
     ConfigSync(args.source_url, args.destination, args.action).action(args.action)
 
+if __name__ == "__main__":
+    main()
