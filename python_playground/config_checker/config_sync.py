@@ -23,7 +23,7 @@ class ConfigSync(object):
         self.temp_path = 'home/dopel/tmp/config_sync' 
         self.logger.info(f"Initalized ConfigSync with source_url: {self.source_url} and destination: {self.destination} and action: {action}")
 
-    def action(self, action):
+    def action(self, action) -> None:
         if action == "sync":
             self.logger.debug("Syncing config files")
             self.sync()
@@ -31,7 +31,7 @@ class ConfigSync(object):
             self.logger.debug("Generating summary")
             self.summary()
 
-    def download(self):
+    def download(self) -> None:
         # download the files from the source_url to the temp_path
         # get a json object from the source_url and iterate through the list
         # if the type is dir, recursively call the download function
@@ -77,7 +77,7 @@ class ConfigSync(object):
         else:
             self.logger.debug(f"Directory {path} already exists")
     
-    def recursive_download(self, url):
+    def recursive_download(self, url) -> None:
         response = None
         try:
             response = requests.get(url)
@@ -96,7 +96,7 @@ class ConfigSync(object):
             self.logger.error(f"Error: {response.status_code}")
             sys.exit(1)
         
-    def compare(self):
+    def compare(self) -> None:
         self.logger.debug(f"Comparing config files in {self.temp_path} with {self.destination}")
         try:
             report = filecmp.dircmp(self.temp_path, self.destination)
@@ -105,11 +105,11 @@ class ConfigSync(object):
             sys.exit(1)
         self.logger.info(f"Report: {json.dumps(report.__dict__)}")
 
-    def copy(self):
+    def copy(self) -> None:
         self.logger.debug(f"Copying config files from {self.temp_path} to {self.destination}")
         shutil.copytree(self.temp_path, self.destination, dirs_exist_ok=True)
 
-    def cleanup(self):
+    def cleanup(self) -> None:
         self.logger.debug(f"Cleaning up temporary files in {self.temp_path}")
         try:
             shutil.rmtree(self.temp_path)
@@ -117,21 +117,20 @@ class ConfigSync(object):
             self.logger.error(f"Error: {self.temp_path} : {e.strerror}")
 
     # Action functions
-
-    def sync(self):
+    def sync(self) -> None:
         self.logger.debug("Syncing config files")
         self.download()
         self.compare()
         self.copy()
         self.cleanup()
 
-    def summary(self):
+    def summary(self) -> None:
         self.logger.debug("Generating summary")
         self.download()
         self.compare()
         self.cleanup()
     
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(description='Sync config files from remote source_url to local files.')
     parser.add_argument('--source_url', help='Source directory', required=True)
     parser.add_argument('--destination', help='Destination directory', required=True)
