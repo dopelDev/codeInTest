@@ -37,7 +37,7 @@ class ConfigSync(object):
         # if the type is dir, recursively call the download function
         # if the type is file, call the download_file function
         self.logger.debug(f"Downloading config files from {self.source_url} to {self.temp_path}")
-        self.recursive_download(self.source_url)
+        self.process_directory(self.source_url, self.destination_path)
     
     # worker function to download the file
     def download_file(self, url, path) -> None:
@@ -51,7 +51,23 @@ class ConfigSync(object):
         if response.status_code == 200:
             with open(f"{self.temp_path}/{path}", 'wb') as f:
                 f.write(response.content)
-    
+
+    def process_directory(self, url, path) -> None:
+        self.logger.debug(f"Processing directory {url}")
+        response = None
+        try:
+            response = requests.get(url)
+        except requests.exceptions.RequestException as e:
+            self.logger.error(f"Error: {e}")
+            sys.exit(1)
+        if response.status_code == 200:
+            response_json : list = json.loads(response.content)
+            for item in response_json:
+                if item.get('type')== 'dir':
+                    self.recursive_download(item.get('url'))
+                elif item.get('type')== 'file':
+                    self.download_file(item.get('download_url'), path)
+
     def create_dir(self, path) -> None:
         # create the directory if it does not exist at the temp_path
         self.logger.debug(f"Creating directory {path}")
@@ -62,24 +78,24 @@ class ConfigSync(object):
             self.logger.debug(f"Directory {path} already exists")
     
     def recursive_download(self, url):
+        response = None
         try:
             response = requests.get(url)
         except requests.exceptions.RequestException as e:
             self.logger.error(f"Error: {e}")
             sys.exit(1)
         if response.status_code == 200:
-            response_json : Dict = json.loads(response.text)
+            response_json : list = json.loads(response.content)
+            for item in response_json:
+                if item.get('type') == 'dir':
+                    self.create_dir(item.get('path'))
+                    self.recursive_download(item.get('url'))
+                elif item.get('type') == 'file':
+                    self.download_file(item.get('download_url'), item.get('path'))
         else:
             self.logger.error(f"Error: {response.status_code}")
             sys.exit(1)
-        if isinstance(response_json, list):
-            for item in response_json:
-                if item.get('type') == 'dir':
-                    self.recursive_download(item.get('html_url'))
-                    self.create_dir(item.get('path'))
-                elif item.get('type') == 'file':
-                    self.download_file(item.get('download_url'), item.get('path'))
-
+        
     def compare(self):
         self.logger.debug(f"Comparing config files in {self.temp_path} with {self.destination}")
         try:
